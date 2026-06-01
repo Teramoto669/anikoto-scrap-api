@@ -66,6 +66,24 @@ Add `?refresh=1` to force a fresh scrape.
 
 ---
 
+## ☁️ Cloudflare Worker Proxy (Optional)
+
+By default, the API provides an internal streaming proxy at `/api/proxy` to bypass CORS. For better performance and free unlimited bandwidth (100k req/day free tier), you can deploy the included Cloudflare Worker and configure the API to use it automatically.
+
+1. Deploy the worker from the `cloudflare-worker/` directory:
+   ```bash
+   cd cloudflare-worker
+   npm install wrangler -g
+   wrangler deploy
+   ```
+2. Add your worker URL as an environment variable in a `.env` file at the root of the project:
+   ```env
+   CF_WORKER_URL=https://your-worker-name.workers.dev
+   ```
+   *Note: When this environment variable is set, the `/api/watch` endpoint will automatically return proxy URLs pointing to your Cloudflare Worker instead of the internal `/api/proxy`.*
+
+---
+
 ## 🗂️ Project Structure
 
 ```

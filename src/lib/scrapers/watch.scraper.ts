@@ -66,6 +66,19 @@ export async function scrapeWatch(slug: string, epNum: string): Promise<WatchDat
     });
   });
 
+  // Helper to generate proxy URLs using either Cloudflare Worker or internal Next.js proxy
+  const getProxyUrl = (targetUrl: string, referer?: string) => {
+    const baseUrl = process.env.NEXT_PUBLIC_CF_WORKER_URL || process.env.CF_WORKER_URL || '/api/proxy';
+    const separator = baseUrl.includes('?') ? '&' : '?';
+    const urlParam = `url=${encodeURIComponent(targetUrl)}`;
+    const refererParam = referer ? `&referer=${encodeURIComponent(referer)}` : '';
+    
+    if (baseUrl.endsWith('/')) {
+      return `${baseUrl}?${urlParam}${refererParam}`;
+    }
+    return `${baseUrl}${separator}${urlParam}${refererParam}`;
+  };
+
   // 2. Fetch all iframe URLs
   const sources: VideoSource[] = [];
   
@@ -86,10 +99,10 @@ export async function scrapeWatch(slug: string, epNum: string): Promise<WatchDat
             url: embedUrl,
             m3u8: extracted?.m3u8 ?? null,
             referer: extracted?.referer,
-            proxyUrl: extracted ? `/api/proxy?url=${encodeURIComponent(extracted.m3u8)}&referer=${encodeURIComponent(extracted.referer)}` : null,
+            proxyUrl: extracted?.m3u8 ? getProxyUrl(extracted.m3u8, extracted.referer) : null,
             tracks: extracted?.tracks?.map(t => ({
               ...t,
-              proxyUrl: extracted.referer ? `/api/proxy?url=${encodeURIComponent(t.file)}&referer=${encodeURIComponent(extracted.referer)}` : undefined
+              proxyUrl: getProxyUrl(t.file, extracted.referer)
             })) || [],
           });
         }
